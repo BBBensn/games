@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>games.bensn.at</title>
+<meta name="description" content="Small games and experiments by Benni.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f5f0e8;
+  --paper: #faf8f3;
+  --ink: #1a1814;
+  --ink2: #3d3a34;
+  --muted: #9a9590;
+  --border: rgba(26,24,20,0.12);
+  --shadow: rgba(26,24,20,0.07);
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'DM Mono', monospace;
+  min-height: 100vh;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  background-size: 256px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+}
+
+.wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 0 1.5rem 5rem;
+}
+
+/* ── Header ── */
+.site-header {
+  padding: 4rem 0 3.5rem;
+  text-align: center;
+  opacity: 0;
+  animation: up 0.5s ease forwards;
+}
+.site-title {
+  font-family: 'Instrument Serif', serif;
+  font-size: clamp(2.8rem, 8vw, 5rem);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--ink);
+  margin-bottom: 0.6rem;
+}
+.site-title em { font-style: italic; }
+.site-sub {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ── Grid ── */
+.games-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+/* ── Game Card ── */
+.game-card {
+  display: block;
+  text-decoration: none;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.75rem 1.5rem 1.5rem;
+  transition: transform 0.15s ease, border-color 0.15s, box-shadow 0.15s;
+  box-shadow: 0 1px 4px var(--shadow);
+  opacity: 0;
+  animation: up 0.5s ease forwards;
+  position: relative;
+  overflow: hidden;
+}
+.game-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(26,24,20,0.22);
+  box-shadow: 0 6px 20px var(--shadow);
+}
+.game-card:active { transform: translateY(-1px); }
+
+/* Accent stripe at top */
+.game-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 12px 12px 0 0;
+  background: var(--card-color, var(--ink));
+  opacity: 0.7;
+}
+
+.card-num {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1.25rem;
+}
+.card-title {
+  font-family: 'Instrument Serif', serif;
+  font-size: 1.9rem;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  color: var(--ink);
+  margin-bottom: 0.6rem;
+}
+.card-title em {
+  font-style: italic;
+  color: var(--card-color, var(--ink));
+}
+.card-desc {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  line-height: 1.7;
+  margin-bottom: 1.25rem;
+}
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.tag {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--muted);
+}
+
+/* ── Flag preview strip on FlagDrill card ── */
+.card-flags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.card-flags img {
+  width: 22px;
+  height: auto;
+  border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+}
+.card-flags .flag-fb { font-size: 0.9rem; line-height: 1; }
+
+/* ── Coming Soon card ── */
+.game-card.soon {
+  opacity: 0.45;
+  cursor: default;
+  pointer-events: none;
+}
+.game-card.soon::after {
+  content: 'Soon';
+  position: absolute;
+  top: 1rem; right: 1rem;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 2px 7px;
+  border-radius: 3px;
+}
+
+/* ── Footer ── */
+.site-footer {
+  margin-top: 3.5rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  opacity: 0;
+  animation: up 0.5s ease 0.4s forwards;
+}
+.footer-link {
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.footer-link:hover { color: var(--ink); }
+
+@keyframes up { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+
+@media (max-width: 480px) {
+  .games-grid { grid-template-columns: 1fr; }
+  .site-title { font-size: 2.5rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="site-header">
+    <h1 class="site-title">games.<em>bensn</em>.at</h1>
+    <p class="site-sub">Small games &amp; experiments</p>
+  </header>
+
+  <div class="games-grid">
+
+    <!-- WikiDrift -->
+    <a class="game-card" href="/wikidrift" style="--card-color:#c8522a;animation-delay:0.1s">
+      <div class="card-num">№ 01</div>
+      <div class="card-title">Wiki<em>Drift</em></div>
+      <div class="card-desc">A Wikipedia article appears — title hidden. Read it. Guess the year. Six chances.</div>
+      <div class="card-tags">
+        <span class="tag">Wikipedia</span>
+        <span class="tag">History</span>
+        <span class="tag">Guessing</span>
+      </div>
+    </a>
+
+    <!-- FlagDrill -->
+    <a class="game-card" href="/flagdrill" style="--card-color:#2a6fc8;animation-delay:0.18s">
+      <div class="card-num">№ 02</div>
+      <div class="card-title">Flag<em>Drill</em></div>
+      <div class="card-flags" id="card-flags"></div>
+      <div class="card-desc">195 flags. 15 minutes. Type as fast as you can — then practice what you missed.</div>
+      <div class="card-tags">
+        <span class="tag">Flags</span>
+        <span class="tag">Geography</span>
+        <span class="tag">Memory</span>
+      </div>
+    </a>
+
+    <!-- Coming Soon -->
+    <div class="game-card soon" style="--card-color:#2a8c4a;animation-delay:0.26s">
+      <div class="card-num">№ 03</div>
+      <div class="card-title"><em>???</em></div>
+      <div class="card-desc">Next game coming soon.</div>
+      <div class="card-tags">
+        <span class="tag">TBD</span>
+      </div>
+    </div>
+
+  </div>
+
+  <footer class="site-footer">
+    <span>games.bensn.at</span>
+    <a href="https://bensn.me" class="footer-link">bensn.me →</a>
+  </footer>
+
+</div>
+
+<script>
+// Populate FlagDrill card with a few flag SVGs
+const flagSample = ['fr','jp','br','de','us','gb','ng','au','in','mx'];
+const container = document.getElementById('card-flags');
+if (container) {
+  flagSample.forEach(iso => {
+    const img = document.createElement('img');
+    img.src = `https://flagcdn.com/w40/${iso}.png`;
+    img.srcset = `https://flagcdn.com/w80/${iso}.png 2x`;
+    img.alt = iso.toUpperCase();
+    img.loading = 'lazy';
+    img.onerror = function() { this.style.display='none'; };
+    container.appendChild(img);
+  });
+}
+</script>
+
+</body>
+</html>

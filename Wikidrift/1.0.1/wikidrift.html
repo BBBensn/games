@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WikiDrift — games.bensn.at</title>
+<meta name="description" content="Guess the year. Read the Wikipedia article. Feel the drift.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f5f0e8;
+  --paper: #faf8f3;
+  --ink: #1a1814;
+  --ink2: #3d3a34;
+  --muted: #9a9590;
+  --border: rgba(26,24,20,0.12);
+  --accent: #c8522a;
+  --accent2: #2a6fc8;
+  --green: #2a8c4a;
+  --red: #c8522a;
+  --yellow: #c89a2a;
+  --shadow: rgba(26,24,20,0.08);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'DM Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Noise texture overlay ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+}
+
+/* ── Layout ── */
+.site-wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 1.5rem 4rem;
+}
+
+/* ── Header ── */
+.site-header {
+  padding: 2rem 0 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1rem;
+  margin-bottom: 2.5rem;
+}
+.site-logo {
+  font-family: 'Instrument Serif', serif;
+  font-size: 1.5rem;
+  color: var(--ink);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+.site-logo span { color: var(--accent); }
+.site-nav {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ── Game Title Block ── */
+.game-title-block {
+  margin-bottom: 2.5rem;
+  opacity: 0;
+  transform: translateY(16px);
+  animation: fadeUp 0.5s ease forwards;
+}
+@keyframes fadeUp { to { opacity:1; transform:none; } }
+
+.game-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+.game-title {
+  font-family: 'Instrument Serif', serif;
+  font-size: clamp(3rem, 8vw, 5.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  margin-bottom: 0.75rem;
+}
+.game-title em {
+  font-style: italic;
+  color: var(--accent);
+}
+.game-subtitle {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  line-height: 1.7;
+  max-width: 380px;
+}
+
+/* ── New Game Button ── */
+.btn-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 10px 20px;
+  background: var(--ink);
+  color: var(--bg);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  margin-top: 1.25rem;
+}
+.btn-new:hover { background: var(--ink2); transform: translateY(-1px); }
+.btn-new:active { transform: translateY(0); }
+
+/* ── Article Card ── */
+.article-card {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  box-shadow: 0 2px 12px var(--shadow), 0 0 0 1px rgba(26,24,20,0.04);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.article-card.visible { opacity: 1; transform: none; }
+
+.article-header {
+  padding: 1.5rem 1.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.article-title-redacted {
+  font-family: 'Instrument Serif', serif;
+  font-size: 1.6rem;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--ink);
+}
+.redact {
+  display: inline-block;
+  background: var(--ink);
+  color: transparent;
+  border-radius: 2px;
+  user-select: none;
+  min-width: 60px;
+}
+.article-img-wrap {
+  flex-shrink: 0;
+  width: 100px;
+  height: 80px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--border);
+  position: relative;
+}
+.article-img-wrap img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.article-img-wrap img.loaded { opacity: 1; }
+.article-img-blur {
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(16px);
+  background: rgba(245,240,232,0.4);
+  transition: opacity 0.5s ease;
+}
+
+.article-body {
+  padding: 1.25rem 1.75rem 1.5rem;
+  font-family: 'Instrument Serif', serif;
+  font-size: 1rem;
+  line-height: 1.75;
+  color: var(--ink2);
+}
+.article-body p + p { margin-top: 0.75rem; }
+
+.article-meta {
+  padding: 0.75rem 1.75rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.article-hint-tag {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--muted);
+  background: transparent;
+  transition: all 0.3s;
+}
+.article-hint-tag.revealed {
+  border-color: rgba(42,111,200,0.4);
+  color: var(--accent2);
+  background: rgba(42,111,200,0.06);
+}
+.article-hint-tag.redacted-tag {
+  background: var(--ink);
+  color: transparent;
+  border-color: transparent;
+}
+
+/* ── Guess Input ── */
+.guess-section {
+  margin-bottom: 1.5rem;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.4s ease 0.2s, transform 0.4s ease 0.2s;
+}
+.guess-section.visible { opacity: 1; transform: none; }
+
+.guess-label {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.guess-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+.guess-input {
+  font-family: 'DM Mono', monospace;
+  font-size: 1.6rem;
+  font-weight: 500;
+  width: 160px;
+  background: var(--paper);
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  padding: 10px 14px;
+  color: var(--ink);
+  outline: none;
+  letter-spacing: 0.06em;
+  transition: border-color 0.15s;
+  -moz-appearance: textfield;
+}
+.guess-input::-webkit-outer-spin-button,
+.guess-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.guess-input:focus { border-color: var(--ink2); }
+.guess-input::placeholder { color: var(--muted); }
+
+.btn-guess {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 10px 20px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.btn-guess:hover { background: #a8401f; transform: translateY(-1px); }
+.btn-guess:active { transform: translateY(0); }
+.btn-guess:disabled { background: var(--muted); cursor: not-allowed; transform: none; }
+
+.attempts-left {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-top: 0.5rem;
+}
+
+/* ── Guess History ── */
+.guess-history {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1.5rem;
+}
+
+.guess-row-result {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--paper);
+  animation: slideIn 0.25s ease;
+}
+@keyframes slideIn { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:none; } }
+
+.guess-year-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 1.1rem;
+  font-weight: 500;
+  min-width: 52px;
+  color: var(--ink);
+}
+.guess-arrow {
+  font-size: 1rem;
+}
+.guess-delta {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  flex: 1;
+}
+.guess-heat {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+.heat-freezing  { background: rgba(42,111,200,0.12); color: var(--accent2); }
+.heat-cold      { background: rgba(42,111,200,0.08); color: var(--accent2); }
+.heat-warm      { background: rgba(200,154,42,0.15); color: var(--yellow); }
+.heat-hot       { background: rgba(200,82,42,0.12); color: var(--accent); }
+.heat-correct   { background: rgba(42,140,74,0.15); color: var(--green); }
+
+/* ── Result Banner ── */
+.result-banner {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 1.5rem;
+  animation: fadeUp 0.4s ease;
+  box-shadow: 0 2px 12px var(--shadow);
+}
+.result-banner.win  { border-left: 3px solid var(--green); }
+.result-banner.lose { border-left: 3px solid var(--accent); }
+
+.result-label {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+}
+.result-label.win  { color: var(--green); }
+.result-label.lose { color: var(--accent); }
+
+.result-year {
+  font-family: 'Instrument Serif', serif;
+  font-size: 3.5rem;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  margin-bottom: 0.5rem;
+}
+.result-desc {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+.result-link {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent2);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(42,111,200,0.3);
+  padding-bottom: 1px;
+  transition: border-color 0.15s;
+}
+.result-link:hover { border-color: var(--accent2); }
+
+/* ── Score bar ── */
+.score-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+.score-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background 0.3s;
+}
+.score-dot.win  { background: var(--green); }
+.score-dot.lose { background: var(--accent); }
+.score-label {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  margin-left: 4px;
+}
+
+/* ── Loading state ── */
+.loading-wrap {
+  padding: 3rem 0;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.spinner {
+  display: inline-block;
+  width: 20px; height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: var(--ink);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin-bottom: 0.75rem;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Error ── */
+.error-wrap {
+  padding: 2rem;
+  border: 1px dashed var(--border);
+  border-radius: 3px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* ── Footer ── */
+.site-footer {
+  border-top: 1px solid var(--border);
+  padding: 1.5rem 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-top: 2rem;
+}
+
+/* ── Responsive ── */
+@media (max-width: 560px) {
+  .article-img-wrap { display: none; }
+  .game-title { font-size: 3rem; }
+  .guess-input { font-size: 1.3rem; width: 130px; }
+}
+</style>
+</head>
+<body>
+
+<div class="site-wrap">
+
+  <header class="site-header">
+    <a href="https://games.bensn.at" class="site-logo">games.<span>bensn</span>.at</a>
+    <span class="site-nav">Wikipedia · Year Guessing</span>
+  </header>
+
+  <!-- Title Block -->
+  <div class="game-title-block">
+    <div class="game-eyebrow">Game №1</div>
+    <h1 class="game-title">Wiki<em>Drift</em></h1>
+    <p class="game-subtitle">A Wikipedia article appears — title hidden. Read it. Guess the year it's about. Six chances.</p>
+    <button class="btn-new" id="btnNew" onclick="startGame()">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <path d="M10 6A4 4 0 112 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M10 2v4H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      New Article
+    </button>
+  </div>
+
+  <!-- Game Area -->
+  <div id="gameArea"></div>
+
+  <footer class="site-footer">
+    <span>wikidrift · games.bensn.at</span>
+    <span id="sessionScore"></span>
+  </footer>
+
+</div>
+
+<script>
+/* ══════════════════════════════════════════
+   WikiDrift — Game Logic
+   ══════════════════════════════════════════ */
+
+const MAX_GUESSES = 6;
+const HINT_SCHEDULE = {
+  1: 'image_unblur',   // after 1st wrong: unblur image
+  2: 'show_category',  // after 2nd wrong: show a category
+  3: 'more_text',      // after 3rd wrong: extra paragraph
+  4: 'show_category2', // after 4th wrong: second category
+  5: 'title_letters',  // after 5th wrong: consonants of title
+};
+
+let state = {
+  article: null,
+  targetYear: null,
+  guesses: [],
+  done: false,
+  won: false,
+  session: { wins: 0, total: 0 },
+  hints: {
+    imageBlurred: true,
+    categoriesShown: 0,
+    extraParagraph: false,
+    titleLetters: false,
+  }
+};
+
+/* ─ Wikipedia API helpers ─ */
+const WP = 'https://en.wikipedia.org/w/api.php?origin=*&format=json&';
+
+async function wpFetch(params) {
+  const url = WP + new URLSearchParams(params).toString();
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('Wikipedia API error');
+  return r.json();
+}
+
+// Get a random article that has a year we can extract
+async function fetchRandomArticle(attempts = 0) {
+  if (attempts > 15) throw new Error('Could not find suitable article');
+
+  // Get random page
+  const rand = await wpFetch({
+    action: 'query',
+    list: 'random',
+    rnnamespace: 0,
+    rnlimit: 5,
+  });
+
+  const pages = rand.query.random;
+
+  for (const page of pages) {
+    try {
+      const article = await fetchArticleData(page.id);
+      if (article) return article;
+    } catch(e) { /* try next */ }
+  }
+
+  return fetchRandomArticle(attempts + 1);
+}
+
+async function fetchArticleData(pageId) {
+  // Get content + categories + images
+  const data = await wpFetch({
+    action: 'query',
+    pageids: pageId,
+    prop: 'extracts|categories|pageimages|revisions',
+    exintro: 0,
+    exsentences: 12,
+    explaintext: 1,
+    clshow: '!hidden',
+    cllimit: 10,
+    pithumbsize: 400,
+    rvprop: 'content',
+    rvslots: 'main',
+    rvsection: 0,
+  });
+
+  const page = Object.values(data.query.pages)[0];
+  if (!page || page.missing) return null;
+
+  const extract = page.extract || '';
+  if (extract.length < 200) return null;
+
+  // Try to find a year from wikitext infobox or categories
+  const wikitext = page.revisions?.[0]?.slots?.main?.['*'] || '';
+  const year = extractYear(wikitext, extract, page.categories || []);
+  if (!year) return null;
+
+  // Clean extract: remove year mentions to avoid giving it away
+  const cleanedExtract = redactYears(extract, year);
+
+  const categories = (page.categories || [])
+    .map(c => c.title.replace('Category:', '').replace(/_/g,' '))
+    .filter(c => !c.match(/\d{4}/) && !c.match(/wikipedia|wikidata|cs1|stub|living/i))
+    .slice(0, 6);
+
+  return {
+    title: page.title,
+    pageId,
+    extract: cleanedExtract,
+    rawExtract: extract,
+    categories,
+    image: page.thumbnail?.source || null,
+    year,
+    url: `https://en.wikipedia.org/?curid=${pageId}`,
+  };
+}
+
+function extractYear(wikitext, extract, categories) {
+  // Try infobox birth_date / year / date patterns in wikitext
+  const patterns = [
+    /\|\s*birth_date\s*=\s*.*?(\d{4})/,
+    /\|\s*year\s*=\s*(\d{4})/,
+    /\|\s*founded\s*=\s*.*?(\d{4})/,
+    /\|\s*date\s*=\s*.*?(\d{4})/,
+    /\|\s*released\s*=\s*.*?(\d{4})/,
+    /\|\s*published\s*=\s*.*?(\d{4})/,
+    /\|\s*start_date\s*=\s*.*?(\d{4})/,
+    /\|\s*completion_date\s*=\s*.*?(\d{4})/,
+    /\|\s*opening\s*=\s*.*?(\d{4})/,
+    /\|\s*death_date\s*=\s*.*?(\d{4})/,
+    /birth_date and age\|(\d{4})/,
+    /birth_date\|(\d{4})/,
+    /death_date and age\|(\d{4})/,
+  ];
+
+  for (const p of patterns) {
+    const m = wikitext.match(p);
+    if (m) {
+      const y = parseInt(m[1]);
+      if (y >= 100 && y <= 2024) return y;
+    }
+  }
+
+  // Try category year hints
+  for (const cat of categories) {
+    const m = cat.title?.match(/\b(1[0-9]{3}|20[01][0-9]|202[0-4])\b/);
+    if (m) {
+      const y = parseInt(m[1]);
+      if (y >= 100 && y <= 2024) return y;
+    }
+  }
+
+  // Try extract first sentence year — must be in a qualifying context
+  const extractPatterns = [
+    /born.*?(\b1[0-9]{3}\b|\b20[012][0-9]\b)/i,
+    /founded.*?in\s+(\b1[0-9]{3}\b|\b20[012][0-9]\b)/i,
+    /established.*?in\s+(\b1[0-9]{3}\b|\b20[012][0-9]\b)/i,
+    /released.*?in\s+(\b1[0-9]{3}\b|\b20[012][0-9]\b)/i,
+    /\((\b1[0-9]{3}\b|\b20[012][0-9]\b)[^)]*\)/,
+  ];
+
+  for (const p of extractPatterns) {
+    const m = extract.match(p);
+    if (m) {
+      const y = parseInt(m[1]);
+      if (y >= 100 && y <= 2024) return y;
+    }
+  }
+
+  return null;
+}
+
+function redactYears(text, targetYear) {
+  // Replace the specific target year with [YEAR]
+  const yr = String(targetYear);
+  // Replace target year
+  let out = text.replace(new RegExp('\\b' + yr + '\\b', 'g'), '[YEAR]');
+  // Also lightly redact ±1 years to avoid dead giveaways
+  const prev = String(targetYear - 1), next = String(targetYear + 1);
+  out = out.replace(new RegExp('\\b' + prev + '\\b', 'g'), '[YEAR−1]');
+  out = out.replace(new RegExp('\\b' + next + '\\b', 'g'), '[YEAR+1]');
+  return out;
+}
+
+/* ─ Game State ─ */
+async function startGame() {
+  const btn = document.getElementById('btnNew');
+  btn.disabled = true;
+  btn.textContent = 'Loading…';
+
+  state.article = null;
+  state.targetYear = null;
+  state.guesses = [];
+  state.done = false;
+  state.won = false;
+  state.hints = { imageBlurred: true, categoriesShown: 0, extraParagraph: false, titleLetters: false };
+
+  const area = document.getElementById('gameArea');
+  area.innerHTML = `<div class="loading-wrap"><div class="spinner"></div><div>Fetching Wikipedia…</div></div>`;
+
+  try {
+    const article = await fetchRandomArticle();
+    state.article = article;
+    state.targetYear = article.year;
+    render();
+  } catch(e) {
+    area.innerHTML = `<div class="error-wrap">Couldn't load an article. Check your connection and try again.<br><br><small>${e.message}</small></div>`;
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M10 6A4 4 0 112 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M10 2v4H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> New Article`;
+}
+
+function submitGuess() {
+  if (state.done) return;
+  const input = document.getElementById('yearInput');
+  const val = parseInt(input.value);
+  if (!val || val < 1 || val > 2100) {
+    input.style.borderColor = 'var(--accent)';
+    setTimeout(() => input.style.borderColor = '', 600);
+    return;
+  }
+
+  state.guesses.push(val);
+  input.value = '';
+
+  const correct = val === state.targetYear;
+  const outOfGuesses = state.guesses.length >= MAX_GUESSES;
+
+  if (correct) {
+    state.done = true;
+    state.won = true;
+    state.session.wins++;
+    state.session.total++;
+  } else if (outOfGuesses) {
+    state.done = true;
+    state.won = false;
+    state.session.total++;
+  } else {
+    // Apply hint
+    const hintKey = HINT_SCHEDULE[state.guesses.length];
+    if (hintKey === 'image_unblur') state.hints.imageBlurred = false;
+    if (hintKey === 'show_category') state.hints.categoriesShown = 1;
+    if (hintKey === 'more_text') state.hints.extraParagraph = true;
+    if (hintKey === 'show_category2') state.hints.categoriesShown = 2;
+    if (hintKey === 'title_letters') state.hints.titleLetters = true;
+  }
+
+  render();
+}
+
+/* ─ Year analysis helpers ─ */
+function getDelta(guess) { return Math.abs(guess - state.targetYear); }
+function getDirection(guess) { return guess < state.targetYear ? '↑' : '↓'; }
+function getHeat(delta) {
+  if (delta === 0)   return { cls: 'heat-correct',  label: 'Exact!' };
+  if (delta <= 2)    return { cls: 'heat-hot',       label: 'Scorching' };
+  if (delta <= 8)    return { cls: 'heat-hot',       label: 'Hot' };
+  if (delta <= 20)   return { cls: 'heat-warm',      label: 'Warm' };
+  if (delta <= 60)   return { cls: 'heat-cold',      label: 'Cold' };
+  return               { cls: 'heat-freezing',  label: 'Freezing' };
+}
+
+/* ─ Title hint (show consonants) ─ */
+function titleHint(title) {
+  return title.split('').map(c => {
+    if ('aeiouAEIOU '.includes(c)) return c === ' ' ? ' ' : '_';
+    return /[a-zA-Z]/.test(c) ? c : c;
+  }).join('');
+}
+
+/* ─ Render ─ */
+function render() {
+  const a = state.article;
+  if (!a) return;
+
+  // Split extract into paragraphs
+  const paragraphs = a.extract.split('\n').filter(p => p.trim().length > 30);
+  const showParas = state.hints.extraParagraph ? Math.min(5, paragraphs.length) : Math.min(2, paragraphs.length);
+
+  // Build title display
+  let titleDisplay = '';
+  if (state.done) {
+    titleDisplay = escHtml(a.title);
+  } else if (state.hints.titleLetters) {
+    titleDisplay = `<span title="Title hint">${escHtml(titleHint(a.title))}</span>`;
+  } else {
+    titleDisplay = `<span class="redact">${'&nbsp;'.repeat(Math.max(8, a.title.length))}</span>`;
+  }
+
+  // Build categories
+  let catHtml = '';
+  const cats = a.categories.slice(0, 5);
+  cats.forEach((cat, i) => {
+    const shown = i < state.hints.categoriesShown || state.done;
+    catHtml += `<span class="article-hint-tag ${shown ? 'revealed' : 'redacted-tag'}">${shown ? escHtml(cat) : '&nbsp;'.repeat(Math.max(6, cat.length))}</span>`;
+  });
+
+  // Build guess history
+  let historyHtml = '';
+  state.guesses.forEach(g => {
+    const delta = getDelta(g);
+    const dir = g === state.targetYear ? '✓' : getDirection(g);
+    const heat = getHeat(delta);
+    const deltaStr = delta === 0 ? 'Correct!' : `${delta} year${delta !== 1 ? 's' : ''} off`;
+    historyHtml += `
+      <div class="guess-row-result">
+        <span class="guess-year-val">${g}</span>
+        <span class="guess-arrow">${dir}</span>
+        <span class="guess-delta">${deltaStr}</span>
+        <span class="guess-heat ${heat.cls}">${heat.label}</span>
+      </div>`;
+  });
+
+  // Build result banner
+  let resultHtml = '';
+  if (state.done) {
+    const isWin = state.won;
+    const lastGuess = state.guesses[state.guesses.length - 1];
+    const delta = getDelta(lastGuess);
+    resultHtml = `
+      <div class="result-banner ${isWin ? 'win' : 'lose'}">
+        <div class="result-label ${isWin ? 'win' : 'lose'}">${isWin ? 'Correct!' : 'Out of guesses'}</div>
+        <div class="result-year">${state.targetYear}</div>
+        <div class="result-desc">${isWin
+          ? `You got it in ${state.guesses.length} guess${state.guesses.length !== 1 ? 'es' : ''}${delta === 0 ? '.' : ` (exactly ${delta} year${delta !== 1 ? 's' : ''} off on your final guess).`}`
+          : `The answer was ${state.targetYear}. Your closest guess was ${closestGuess()} (${getDelta(closestGuess())} year${getDelta(closestGuess()) !== 1 ? 's' : ''} off).`
+        }</div>
+        <a href="${a.url}" target="_blank" rel="noopener" class="result-link">Read full article →</a>
+        <div class="score-bar">
+          ${Array.from({length: state.session.total}, (_,i) => {
+            // We don't track per-game history properly here, just show total dots
+            return `<div class="score-dot"></div>`;
+          }).join('')}
+          <span class="score-label">${state.session.wins}/${state.session.total} won this session</span>
+        </div>
+      </div>`;
+  }
+
+  // Build input section
+  let inputHtml = '';
+  if (!state.done) {
+    const remaining = MAX_GUESSES - state.guesses.length;
+    inputHtml = `
+      <div class="guess-section visible" id="guessSection">
+        <div class="guess-label">Your guess — what year?</div>
+        <div class="guess-row">
+          <input type="number" id="yearInput" class="guess-input" placeholder="1847"
+            min="1" max="2100" inputmode="numeric"
+            onkeydown="if(event.key==='Enter') submitGuess()">
+          <button class="btn-guess" onclick="submitGuess()">Guess</button>
+        </div>
+        <div class="attempts-left">${remaining} attempt${remaining !== 1 ? 's' : ''} remaining</div>
+      </div>`;
+  }
+
+  const area = document.getElementById('gameArea');
+  area.innerHTML = `
+    <div class="article-card visible">
+      <div class="article-header">
+        <div class="article-title-redacted">${titleDisplay}</div>
+        <div class="article-img-wrap" id="imgWrap">
+          ${a.image ? `<img src="${escHtml(a.image)}" alt="" onload="this.classList.add('loaded')" id="articleImg">` : ''}
+          <div class="article-img-blur" id="imgBlur" style="opacity:${state.hints.imageBlurred && !state.done ? 1 : 0}"></div>
+        </div>
+      </div>
+      <div class="article-body">
+        ${paragraphs.slice(0, showParas).map(p => `<p>${escHtml(p)}</p>`).join('')}
+        ${!state.hints.extraParagraph && !state.done && paragraphs.length > 2
+          ? `<p style="color:var(--muted);font-style:italic;font-size:0.875rem">More context unlocks after your 3rd guess…</p>`
+          : ''}
+      </div>
+      <div class="article-meta">${catHtml}</div>
+    </div>
+
+    ${historyHtml ? `<div class="guess-history">${historyHtml}</div>` : ''}
+    ${inputHtml}
+    ${resultHtml}
+  `;
+
+  // Focus input
+  if (!state.done) {
+    setTimeout(() => document.getElementById('yearInput')?.focus(), 50);
+  }
+
+  // Update session score in footer
+  const scoreEl = document.getElementById('sessionScore');
+  if (scoreEl && state.session.total > 0) {
+    scoreEl.textContent = `Session: ${state.session.wins}/${state.session.total}`;
+  }
+}
+
+function closestGuess() {
+  return state.guesses.reduce((best, g) =>
+    getDelta(g) < getDelta(best) ? g : best
+  , state.guesses[0]);
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+/* ─ Boot ─ */
+startGame();
+</script>
+
+</body>
+</html>
