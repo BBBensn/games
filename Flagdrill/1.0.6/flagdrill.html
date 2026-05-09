@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlagDrill — games.bensn.at</title>
+<meta name="description" content="All the flags. 15 minutes. How many do you know?">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:     #f5f0e8;
+  --paper:  #faf8f3;
+  --ink:    #1a1814;
+  --ink2:   #3d3a34;
+  --muted:  #9a9590;
+  --border: rgba(26,24,20,0.12);
+  --shadow: rgba(26,24,20,0.08);
+  --accent: #2a6fc8;
+  --accent-dim: rgba(42,111,200,0.12);
+  --green:  #2a8c4a;
+  --green-dim: rgba(42,140,74,0.12);
+  --red:    #c8522a;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'DM Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+}
+
+.site-wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 0 1.5rem 4rem;
+}
+
+/* ── Header ── */
+.site-header {
+  padding: 2rem 0 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1rem;
+  margin-bottom: 2.5rem;
+}
+.site-logo {
+  font-family: 'Instrument Serif', serif;
+  font-size: 1.5rem;
+  color: var(--ink);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+.site-logo span { color: var(--accent); }
+.site-nav {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ── Screens ── */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ── Start Screen ── */
+.start-hero {
+  text-align: center;
+  padding: 2rem 0 3rem;
+  animation: fadeUp 0.4s ease forwards;
+}
+.start-flag {
+  font-size: 5rem;
+  line-height: 1;
+  margin-bottom: 1.5rem;
+  display: block;
+}
+.start-title {
+  font-family: 'Instrument Serif', serif;
+  font-size: clamp(2.5rem, 7vw, 4rem);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--ink);
+  margin-bottom: 0.5rem;
+}
+.start-title em {
+  font-style: italic;
+  color: var(--accent);
+}
+.start-sub {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 3rem;
+}
+
+.mode-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  max-width: 560px;
+  margin: 0 auto 2rem;
+}
+
+.mode-card {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.75rem 1.5rem;
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+  box-shadow: 0 1px 4px var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+.mode-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 12px 12px 0 0;
+  background: var(--card-accent, var(--accent));
+  opacity: 0.7;
+}
+.mode-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(26,24,20,0.22);
+  box-shadow: 0 6px 20px var(--shadow);
+}
+.mode-card:active { transform: translateY(0); }
+.mode-icon {
+  font-size: 1.8rem;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+.mode-name {
+  font-family: 'Instrument Serif', serif;
+  font-size: 1.4rem;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin-bottom: 0.4rem;
+}
+.mode-desc {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.mode-badge {
+  display: inline-block;
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  margin-top: 0.75rem;
+}
+
+.start-stats {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--border);
+  max-width: 560px;
+  margin: 0 auto;
+}
+.stat-val {
+  font-size: 1.2rem;
+  font-family: 'Instrument Serif', serif;
+  color: var(--ink);
+  display: block;
+  margin-bottom: 0.15rem;
+}
+
+/* ── Drill Screen ── */
+.drill-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding: 0.875rem 1.25rem;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.drill-timer {
+  font-family: 'Instrument Serif', serif;
+  font-size: 2rem;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  min-width: 80px;
+  font-variant-numeric: tabular-nums;
+}
+.drill-timer.urgent { color: var(--red); animation: pulse 1s ease infinite; }
+.drill-progress-wrap { flex: 1; }
+.drill-progress-label {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+  display: flex;
+  justify-content: space-between;
+}
+.drill-progress-track {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.drill-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+.drill-give-up {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--border);
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: 'DM Mono', monospace;
+  transition: color 0.15s, border-color 0.15s;
+}
+.drill-give-up:hover { color: var(--red); border-color: var(--red); }
+
+/* ── Focus area: sticky big flag + input ── */
+.drill-focus {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--bg);
+  border: 1.5px solid var(--accent);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(42,111,200,0.08);
+}
+.drill-focus-flag {
+  flex-shrink: 0;
+  width: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.drill-focus-flag img {
+  width: 80px;
+  height: auto;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+}
+.drill-focus-flag .flag-fallback { font-size: 3.5rem; line-height: 1; }
+.drill-focus-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.drill-focus-label {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.drill-input {
+  width: 100%;
+  background: var(--paper);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-family: 'DM Mono', monospace;
+  font-size: 1rem;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+.drill-input:focus { border-color: var(--accent); }
+.drill-input.flash-green { border-color: var(--green); background: var(--green-dim); }
+.drill-input.flash-wrong { border-color: var(--red); background: rgba(200,82,42,0.06); }
+.drill-skip-btn {
+  align-self: flex-start;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: 'DM Mono', monospace;
+  transition: color 0.15s, border-color 0.15s;
+}
+.drill-skip-btn:hover { color: var(--ink); border-color: rgba(26,24,20,0.3); }
+
+/* ── Alphabetical flag list ── */
+.flags-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.35rem;
+}
+.flag-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.65rem;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  cursor: pointer;
+  user-select: none;
+}
+.flag-row:hover { border-color: rgba(26,24,20,0.22); color: var(--ink2); }
+.flag-row.focused {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--ink);
+  font-weight: 500;
+}
+.flag-row.guessed {
+  background: var(--green-dim);
+  border-color: rgba(42,140,74,0.25);
+  color: var(--green);
+}
+.flag-row.guessed .row-name { text-decoration: line-through; opacity: 0.7; }
+.flag-row .row-img { width: 26px; height: auto; border-radius: 2px; flex-shrink: 0; }
+.flag-row .row-fallback { font-size: 1.1rem; flex-shrink: 0; }
+.flag-row .row-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.flag-row .row-check { color: var(--green); font-size: 0.8rem; flex-shrink: 0; }
+
+/* ── Results Screen ── */
+.results-hero {
+  text-align: center;
+  padding: 2rem 0 2.5rem;
+  animation: fadeUp 0.4s ease forwards;
+}
+.results-score-big {
+  font-family: 'Instrument Serif', serif;
+  font-size: clamp(4rem, 12vw, 7rem);
+  letter-spacing: -0.05em;
+  line-height: 1;
+  color: var(--ink);
+}
+.results-score-big span { color: var(--accent); }
+.results-label {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.results-meta {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 2.5rem;
+}
+.results-meta-item {
+  text-align: center;
+}
+.results-meta-val {
+  font-family: 'Instrument Serif', serif;
+  font-size: 1.4rem;
+  color: var(--ink);
+  display: block;
+}
+.results-meta-key {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.results-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+}
+.btn {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.7rem 1.4rem;
+  border-radius: 7px;
+  cursor: pointer;
+  border: 1.5px solid;
+  transition: all 0.15s;
+}
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+.btn-primary:hover { background: #235cb0; border-color: #235cb0; }
+.btn-secondary {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--ink2);
+}
+.btn-secondary:hover { border-color: rgba(26,24,20,0.3); color: var(--ink); }
+
+.results-section-title {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.missed-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+.missed-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--ink2);
+}
+.missed-item .flag { font-size: 1.2rem; }
+
+/* ── Learn Screen ── */
+.learn-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+.learn-counter {
+  font-family: 'Instrument Serif', serif;
+  font-size: 1.6rem;
+  color: var(--ink);
+  letter-spacing: -0.03em;
+}
+
+.learn-card {
+  background: var(--paper);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 3rem 2rem;
+  text-align: center;
+  margin-bottom: 1rem;
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  animation: fadeUp 0.25s ease forwards;
+}
+.learn-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 14px 14px 0 0;
+  background: var(--accent);
+  opacity: 0.6;
+}
+.learn-flag {
+  font-size: 5rem;
+  line-height: 1;
+  margin-bottom: 1.25rem;
+  display: block;
+}
+.learn-question {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+.learn-input {
+  width: 100%;
+  max-width: 320px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-family: 'DM Mono', monospace;
+  font-size: 1rem;
+  text-align: center;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.learn-input:focus { border-color: var(--accent); }
+.learn-input.correct { border-color: var(--green); background: var(--green-dim); }
+.learn-input.wrong { border-color: var(--red); }
+.learn-answer {
+  font-family: 'Instrument Serif', serif;
+  font-size: 1.6rem;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin-top: 1rem;
+  display: none;
+}
+.learn-hint {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-top: 0.5rem;
+  display: none;
+}
+.learn-chip {
+  display: inline-block;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-top: 0.5rem;
+}
+.learn-chip.hard {
+  background: rgba(200,82,42,0.12);
+  color: var(--red);
+}
+.learn-chip.new {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.learn-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.learn-progress-row {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  margin-top: 1rem;
+}
+.learn-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background 0.2s;
+}
+.learn-dot.done { background: var(--green); }
+.learn-dot.current { background: var(--accent); }
+.learn-dot.wrong-dot { background: var(--red); }
+
+/* ── Footer ── */
+.site-footer {
+  margin-top: 3.5rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+/* ── Animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+@keyframes pop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+
+/* ── Flag SVG images ── */
+.flag-svg {
+  display: block;
+  width: 36px;
+  height: auto;
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  object-fit: cover;
+}
+.flag-fallback { font-size: 1.5rem; line-height: 1; }
+.missed-item .flag-svg { width: 28px; border-radius: 2px; }
+.missed-item .flag-fallback { font-size: 1.1rem; }
+#learn-flag .flag-svg { width: 100px; height: auto; border-radius: 4px; box-shadow: 0 2px 12px rgba(0,0,0,0.12); }
+#learn-flag .flag-fallback { font-size: 5rem; }
+
+/* ── Start flag preview ── */
+.start-flag-preview {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  max-width: 320px;
+  margin: 0 auto 1.5rem;
+}
+.start-flag-preview img {
+  width: 36px;
+  height: auto;
+  border-radius: 3px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+  opacity: 0;
+  animation: fadeUp 0.3s ease forwards;
+}
+
+.pop { animation: pop 0.2s ease; }
+
+/* ── Responsive ── */
+@media (max-width: 520px) {
+  .mode-grid { grid-template-columns: 1fr; }
+  .missed-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+  .results-meta { gap: 1.25rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="site-wrap">
+
+  <header class="site-header">
+    <a href="https://games.bensn.at" class="site-logo">
+      games.<span>bensn</span>.at
+    </a>
+    <span class="site-nav">FlagDrill · All the flags</span>
+  </header>
+
+  <!-- ═══════════════ START SCREEN ═══════════════ -->
+  <div id="screen-start" class="screen active">
+    <div class="start-hero">
+      <div class="start-flag-preview" id="start-preview"></div>
+      <h1 class="start-title">Flag<em>Drill</em></h1>
+      <p class="start-sub">195 countries · How many do you know?</p>
+
+      <div class="mode-grid">
+        <button class="mode-card" onclick="startDrill()" style="--card-accent:#2a6fc8">
+          <span class="mode-icon" style="font-size:1.4rem;letter-spacing:0.05em;font-family:'DM Mono',monospace;color:var(--accent)">15:00</span>
+          <div class="mode-name">Drill</div>
+          <div class="mode-desc">All 195 flags. 15 minutes. Type as fast as you can.</div>
+          <span class="mode-badge">Classic</span>
+        </button>
+        <button class="mode-card" onclick="startLearn()" style="--card-accent:#2a8c4a">
+          <span class="mode-icon" style="font-size:1.1rem;letter-spacing:0.08em;font-family:'DM Mono',monospace;color:var(--green)">SRS</span>
+          <div class="mode-name">Learn</div>
+          <div class="mode-desc">Focused practice on the flags you keep missing.</div>
+          <span class="mode-badge">Spaced Rep</span>
+        </button>
+      </div>
+
+      <div class="start-stats" id="start-stats">
+        <div>
+          <span class="stat-val" id="stat-best">—</span>
+          best drill
+        </div>
+        <div>
+          <span class="stat-val" id="stat-learned">—</span>
+          flags learned
+        </div>
+        <div>
+          <span class="stat-val" id="stat-drills">—</span>
+          drills done
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ DRILL SCREEN ═══════════════ -->
+  <div id="screen-drill" class="screen">
+
+    <!-- Top bar: timer + progress + give up -->
+    <div class="drill-bar">
+      <div class="drill-timer" id="drill-timer">15:00</div>
+      <div class="drill-progress-wrap">
+        <div class="drill-progress-label">
+          <span id="drill-count">0 / 195</span>
+          <span id="drill-pct">0%</span>
+        </div>
+        <div class="drill-progress-track">
+          <div class="drill-progress-fill" id="drill-fill" style="width:0%"></div>
+        </div>
+      </div>
+      <button class="drill-give-up" onclick="endDrill(true)">Give up</button>
+    </div>
+
+    <!-- Focus area: current flag + text input + skip -->
+    <div class="drill-focus">
+      <div class="drill-focus-flag" id="drill-focus-flag"></div>
+      <div class="drill-focus-right">
+        <div class="drill-focus-label">Which country is this?</div>
+        <input type="text" class="drill-input" id="drill-input"
+               placeholder="Country name…" autocomplete="off" spellcheck="false"
+               oninput="handleDrillInput()"
+               onkeydown="handleDrillKey(event)">
+        <button class="drill-skip-btn" onclick="drillSkip()">Tab — Skip →</button>
+      </div>
+    </div>
+
+    <!-- Alphabetical list of all flags -->
+    <div class="flags-list" id="flags-list"></div>
+  </div>
+
+  <!-- ═══════════════ RESULTS SCREEN ═══════════════ -->
+  <div id="screen-results" class="screen">
+    <div class="results-hero">
+      <div class="results-score-big" id="results-score">
+        <span id="results-n">0</span> / <span id="results-total">195</span>
+      </div>
+      <div class="results-label" id="results-sub">countries identified</div>
+
+      <div class="results-meta">
+        <div class="results-meta-item">
+          <span class="results-meta-val" id="results-pct">0%</span>
+          <span class="results-meta-key">correct</span>
+        </div>
+        <div class="results-meta-item">
+          <span class="results-meta-val" id="results-time">—</span>
+          <span class="results-meta-key">time used</span>
+        </div>
+        <div class="results-meta-item">
+          <span class="results-meta-val" id="results-best-val">—</span>
+          <span class="results-meta-key">personal best</span>
+        </div>
+      </div>
+
+      <div class="results-actions">
+        <button class="btn btn-primary" onclick="startDrill()">Drill Again</button>
+        <button class="btn btn-secondary" onclick="startLearn()">Practice Missed →</button>
+        <button class="btn btn-secondary" onclick="showStart()">Home</button>
+      </div>
+    </div>
+
+    <div id="results-missed-section">
+      <div class="results-section-title" id="results-missed-title">Flags you missed</div>
+      <div class="missed-grid" id="missed-grid"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ LEARN SCREEN ═══════════════ -->
+  <div id="screen-learn" class="screen">
+    <div class="learn-bar">
+      <span>Learn Mode</span>
+      <span class="learn-counter"><span id="learn-curr">1</span> / <span id="learn-total">10</span></span>
+      <button class="btn btn-secondary" onclick="showStart()" style="padding:0.35rem 0.8rem;font-size:9px">← Home</button>
+    </div>
+
+    <div class="learn-card" id="learn-card">
+      <div class="learn-flag" id="learn-flag"></div>
+      <div class="learn-question">Which country is this?</div>
+      <input type="text" class="learn-input" id="learn-input"
+             placeholder="Country name…" autocomplete="off" spellcheck="false"
+             onkeydown="if(event.key==='Enter')checkLearnAnswer()">
+      <div class="learn-answer" id="learn-answer"></div>
+      <div class="learn-hint" id="learn-hint"></div>
+      <span class="learn-chip" id="learn-chip" style="display:none"></span>
+    </div>
+
+    <div class="learn-progress-row" id="learn-dots"></div>
+
+    <div class="learn-actions">
+      <button class="btn btn-secondary" id="learn-skip-btn" onclick="learnSkip()">Skip</button>
+      <button class="btn btn-primary" id="learn-next-btn" onclick="learnNext()" style="display:none">Next →</button>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <span>FlagDrill · games.bensn.at</span>
+    <span id="footer-info" style="color:var(--muted)"></span>
+  </footer>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// DATA — 195 UN member states + observer states
+// ═══════════════════════════════════════════════
+// Format: [iso2, primaryName, [...aliases], emojiFlag]
+// Aliases: full names a player would naturally type, including German variants
+const COUNTRIES = [
+  ["af","Afghanistan",[],"🇦🇫"],
+  ["al","Albania",["Albanien"],"🇦🇱"],
+  ["dz","Algeria",["Algerien"],"🇩🇿"],
+  ["ad","Andorra",[],"🇦🇩"],
+  ["ao","Angola",[],"🇦🇴"],
+  ["ag","Antigua and Barbuda",["Antigua und Barbuda"],"🇦🇬"],
+  ["ar","Argentina",["Argentinien"],"🇦🇷"],
+  ["am","Armenia",["Armenien"],"🇦🇲"],
+  ["au","Australia",["Australien"],"🇦🇺"],
+  ["at","Austria",["Österreich","Oesterreich"],"🇦🇹"],
+  ["az","Azerbaijan",["Aserbaidschan"],"🇦🇿"],
+  ["bs","Bahamas",["The Bahamas"],"🇧🇸"],
+  ["bh","Bahrain",[],"🇧🇭"],
+  ["bd","Bangladesh",["Bangladesch"],"🇧🇩"],
+  ["bb","Barbados",[],"🇧🇧"],
+  ["by","Belarus",["Weißrussland","Weissrussland"],"🇧🇾"],
+  ["be","Belgium",["Belgique","Belgien","België"],"🇧🇪"],
+  ["bz","Belize",[],"🇧🇿"],
+  ["bj","Benin",[],"🇧🇯"],
+  ["bt","Bhutan",[],"🇧🇹"],
+  ["bo","Bolivia",[],"🇧🇴"],
+  ["ba","Bosnia and Herzegovina",["Bosnia Herzegovina","Bosnia-Herzegovina","Bosnien und Herzegowina"],"🇧🇦"],
+  ["bw","Botswana",[],"🇧🇼"],
+  ["br","Brazil",["Brasil","Brasilien"],"🇧🇷"],
+  ["bn","Brunei",["Brunei Darussalam"],"🇧🇳"],
+  ["bg","Bulgaria",["Bulgarien"],"🇧🇬"],
+  ["bf","Burkina Faso",[],"🇧🇫"],
+  ["bi","Burundi",[],"🇧🇮"],
+  ["cv","Cape Verde",["Cabo Verde","Kap Verde"],"🇨🇻"],
+  ["kh","Cambodia",["Kambodscha"],"🇰🇭"],
+  ["cm","Cameroon",["Kamerun"],"🇨🇲"],
+  ["ca","Canada",["Kanada"],"🇨🇦"],
+  ["cf","Central African Republic",["Zentralafrikanische Republik"],"🇨🇫"],
+  ["td","Chad",["Tschad"],"🇹🇩"],
+  ["cl","Chile",[],"🇨🇱"],
+  ["cn","China",[],"🇨🇳"],
+  ["co","Colombia",["Kolumbien"],"🇨🇴"],
+  ["km","Comoros",["Komoren"],"🇰🇲"],
+  ["cd","DR Congo",["Democratic Republic of the Congo","DRC","Congo-Kinshasa","Zaire","Demokratische Republik Kongo"],"🇨🇩"],
+  ["cg","Republic of the Congo",["Congo Republic","Congo-Brazzaville","Republik Kongo"],"🇨🇬"],
+  ["cr","Costa Rica",[],"🇨🇷"],
+  ["hr","Croatia",["Hrvatska","Kroatien"],"🇭🇷"],
+  ["cu","Cuba",["Kuba"],"🇨🇺"],
+  ["cy","Cyprus",["Zypern"],"🇨🇾"],
+  ["cz","Czech Republic",["Czechia","Česká Republika","Tschechien","Tschechische Republik"],"🇨🇿"],
+  ["dk","Denmark",["Danmark","Dänemark"],"🇩🇰"],
+  ["dj","Djibouti",["Dschibuti"],"🇩🇯"],
+  ["dm","Dominica",[],"🇩🇲"],
+  ["do","Dominican Republic",["Dominikanische Republik"],"🇩🇴"],
+  ["ec","Ecuador",[],"🇪🇨"],
+  ["eg","Egypt",["Ägypten"],"🇪🇬"],
+  ["sv","El Salvador",["Salvador"],"🇸🇻"],
+  ["gq","Equatorial Guinea",["Guinea Ecuatorial","Äquatorialguinea"],"🇬🇶"],
+  ["er","Eritrea",[],"🇪🇷"],
+  ["ee","Estonia",["Eesti","Estland"],"🇪🇪"],
+  ["sz","Eswatini",["Swaziland","Swasiland"],"🇸🇿"],
+  ["et","Ethiopia",["Äthiopien"],"🇪🇹"],
+  ["fj","Fiji",["Fidschi"],"🇫🇯"],
+  ["fi","Finland",["Suomi","Finnland"],"🇫🇮"],
+  ["fr","France",["Frankreich"],"🇫🇷"],
+  ["ga","Gabon",["Gabun"],"🇬🇦"],
+  ["gm","Gambia",["The Gambia"],"🇬🇲"],
+  ["ge","Georgia",["Georgien"],"🇬🇪"],
+  ["de","Germany",["Deutschland"],"🇩🇪"],
+  ["gh","Ghana",[],"🇬🇭"],
+  ["gr","Greece",["Hellas","Ellada","Griechenland"],"🇬🇷"],
+  ["gd","Grenada",[],"🇬🇩"],
+  ["gt","Guatemala",[],"🇬🇹"],
+  ["gn","Guinea",[],"🇬🇳"],
+  ["gw","Guinea-Bissau",[],"🇬🇼"],
+  ["gy","Guyana",[],"🇬🇾"],
+  ["ht","Haiti",[],"🇭🇹"],
+  ["hn","Honduras",[],"🇭🇳"],
+  ["hu","Hungary",["Magyarország","Ungarn"],"🇭🇺"],
+  ["is","Iceland",["Ísland","Island"],"🇮🇸"],
+  ["in","India",["Indien"],"🇮🇳"],
+  ["id","Indonesia",["Indonesien"],"🇮🇩"],
+  ["ir","Iran",[],"🇮🇷"],
+  ["iq","Iraq",["Irak"],"🇮🇶"],
+  ["ie","Ireland",["Éire","Irland"],"🇮🇪"],
+  ["il","Israel",[],"🇮🇱"],
+  ["it","Italy",["Italia","Italien"],"🇮🇹"],
+  ["jm","Jamaica",["Jamaika"],"🇯🇲"],
+  ["jp","Japan",["Nippon","Nihon"],"🇯🇵"],
+  ["jo","Jordan",["Jordanien"],"🇯🇴"],
+  ["kz","Kazakhstan",["Kasachstan"],"🇰🇿"],
+  ["ke","Kenya",["Kenia"],"🇰🇪"],
+  ["ki","Kiribati",[],"🇰🇮"],
+  ["xk","Kosovo",[],"🇽🇰"],
+  ["kw","Kuwait",[],"🇰🇼"],
+  ["kg","Kyrgyzstan",["Kirgisistan","Kirgistan"],"🇰🇬"],
+  ["la","Laos",[],"🇱🇦"],
+  ["lv","Latvia",["Latvija","Lettland"],"🇱🇻"],
+  ["lb","Lebanon",["Libanon"],"🇱🇧"],
+  ["ls","Lesotho",[],"🇱🇸"],
+  ["lr","Liberia",[],"🇱🇷"],
+  ["ly","Libya",["Libyen"],"🇱🇾"],
+  ["li","Liechtenstein",[],"🇱🇮"],
+  ["lt","Lithuania",["Lietuva","Litauen"],"🇱🇹"],
+  ["lu","Luxembourg",["Luxemburg"],"🇱🇺"],
+  ["mg","Madagascar",["Madagaskar"],"🇲🇬"],
+  ["mw","Malawi",[],"🇲🇼"],
+  ["my","Malaysia",[],"🇲🇾"],
+  ["mv","Maldives",["Malediven"],"🇲🇻"],
+  ["ml","Mali",[],"🇲🇱"],
+  ["mt","Malta",[],"🇲🇹"],
+  ["mh","Marshall Islands",["Marshallinseln"],"🇲🇭"],
+  ["mr","Mauritania",["Mauretanien"],"🇲🇷"],
+  ["mu","Mauritius",[],"🇲🇺"],
+  ["mx","Mexico",["México","Mexiko"],"🇲🇽"],
+  ["fm","Micronesia",["Federated States of Micronesia","Mikronesien"],"🇫🇲"],
+  ["md","Moldova",["Moldawien","Moldau"],"🇲🇩"],
+  ["mc","Monaco",[],"🇲🇨"],
+  ["mn","Mongolia",["Mongolei"],"🇲🇳"],
+  ["me","Montenegro",["Crna Gora"],"🇲🇪"],
+  ["ma","Morocco",["Maroc","Marokko"],"🇲🇦"],
+  ["mz","Mozambique",["Moçambique","Mosambik"],"🇲🇿"],
+  ["mm","Myanmar",["Burma"],"🇲🇲"],
+  ["na","Namibia",[],"🇳🇦"],
+  ["nr","Nauru",[],"🇳🇷"],
+  ["np","Nepal",[],"🇳🇵"],
+  ["nl","Netherlands",["Holland","Niederlande"],"🇳🇱"],
+  ["nz","New Zealand",["Aotearoa","Neuseeland"],"🇳🇿"],
+  ["ni","Nicaragua",[],"🇳🇮"],
+  ["ne","Niger",[],"🇳🇪"],
+  ["ng","Nigeria",[],"🇳🇬"],
+  ["mk","North Macedonia",["Macedonia","Makedonija","Nordmazedonien","Mazedonien"],"🇲🇰"],
+  ["kp","North Korea",["Nordkorea"],"🇰🇵"],
+  ["no","Norway",["Norge","Norwegen"],"🇳🇴"],
+  ["om","Oman",[],"🇴🇲"],
+  ["pk","Pakistan",[],"🇵🇰"],
+  ["pw","Palau",[],"🇵🇼"],
+  ["ps","Palestine",["Palestinian Territories","Palästina"],"🇵🇸"],
+  ["pa","Panama",[],"🇵🇦"],
+  ["pg","Papua New Guinea",["Papua-Neuguinea"],"🇵🇬"],
+  ["py","Paraguay",[],"🇵🇾"],
+  ["pe","Peru",[],"🇵🇪"],
+  ["ph","Philippines",["Pilipinas","Philippinen"],"🇵🇭"],
+  ["pl","Poland",["Polska","Polen"],"🇵🇱"],
+  ["pt","Portugal",[],"🇵🇹"],
+  ["qa","Qatar",["Katar"],"🇶🇦"],
+  ["ro","Romania",["România","Rumänien"],"🇷🇴"],
+  ["ru","Russia",["Russian Federation","Russland"],"🇷🇺"],
+  ["rw","Rwanda",["Ruanda"],"🇷🇼"],
+  ["kn","Saint Kitts and Nevis",["St Kitts and Nevis","St. Kitts and Nevis"],"🇰🇳"],
+  ["lc","Saint Lucia",["St Lucia","St. Lucia"],"🇱🇨"],
+  ["vc","Saint Vincent and the Grenadines",["St Vincent and the Grenadines","St. Vincent and the Grenadines"],"🇻🇨"],
+  ["ws","Samoa",[],"🇼🇸"],
+  ["sm","San Marino",[],"🇸🇲"],
+  ["st","São Tomé and Príncipe",["Sao Tome and Principe","Sao Tomé and Príncipe"],"🇸🇹"],
+  ["sa","Saudi Arabia",["Saudi-Arabien"],"🇸🇦"],
+  ["sn","Senegal",[],"🇸🇳"],
+  ["rs","Serbia",["Srbija","Serbien"],"🇷🇸"],
+  ["sc","Seychelles",["Seychellen"],"🇸🇨"],
+  ["sl","Sierra Leone",[],"🇸🇱"],
+  ["sg","Singapore",["Singapur"],"🇸🇬"],
+  ["sk","Slovakia",["Slovensko","Slowakei"],"🇸🇰"],
+  ["si","Slovenia",["Slovenija","Slowenien"],"🇸🇮"],
+  ["sb","Solomon Islands",["Salomonen","Salomoninseln"],"🇸🇧"],
+  ["so","Somalia",[],"🇸🇴"],
+  ["za","South Africa",["Südafrika"],"🇿🇦"],
+  ["ss","South Sudan",["Südsudan"],"🇸🇸"],
+  ["es","Spain",["España","Spanien"],"🇪🇸"],
+  ["lk","Sri Lanka",["Ceylon"],"🇱🇰"],
+  ["sd","Sudan",[],"🇸🇩"],
+  ["sr","Suriname",[],"🇸🇷"],
+  ["se","Sweden",["Sverige","Schweden"],"🇸🇪"],
+  ["ch","Switzerland",["Schweiz","Suisse","Svizzera","Svizra"],"🇨🇭"],
+  ["sy","Syria",["Syrien"],"🇸🇾"],
+  ["tw","Taiwan",[],"🇹🇼"],
+  ["tj","Tajikistan",["Tadschikistan"],"🇹🇯"],
+  ["tz","Tanzania",["Tansania"],"🇹🇿"],
+  ["th","Thailand",[],"🇹🇭"],
+  ["tl","Timor-Leste",["East Timor","Osttimor"],"🇹🇱"],
+  ["tg","Togo",[],"🇹🇬"],
+  ["to","Tonga",[],"🇹🇴"],
+  ["tt","Trinidad and Tobago",["Trinidad und Tobago"],"🇹🇹"],
+  ["tn","Tunisia",["Tunesien"],"🇹🇳"],
+  ["tr","Turkey",["Türkiye","Turkiye","Türkei"],"🇹🇷"],
+  ["tm","Turkmenistan",[],"🇹🇲"],
+  ["tv","Tuvalu",[],"🇹🇻"],
+  ["ug","Uganda",[],"🇺🇬"],
+  ["ua","Ukraine",[],"🇺🇦"],
+  ["ae","United Arab Emirates",["UAE","Emirates","Vereinigte Arabische Emirate"],"🇦🇪"],
+  ["gb","United Kingdom",["UK","Great Britain","Britain","Vereinigtes Königreich"],"🇬🇧"],
+  ["us","United States",["USA","America","United States of America","Vereinigte Staaten","Vereinigte Staaten von Amerika"],"🇺🇸"],
+  ["uy","Uruguay",[],"🇺🇾"],
+  ["uz","Uzbekistan",["Usbekistan"],"🇺🇿"],
+  ["vu","Vanuatu",[],"🇻🇺"],
+  ["va","Vatican City",["Holy See","Vatican","Vatikanstadt"],"🇻🇦"],
+  ["ve","Venezuela",[],"🇻🇪"],
+  ["vn","Vietnam",["Viet Nam"],"🇻🇳"],
+  ["ye","Yemen",["Jemen"],"🇾🇪"],
+  ["zm","Zambia",["Sambia"],"🇿🇲"],
+  ["zw","Zimbabwe",[],"🇿🇼"],
+]
+
+const TOTAL = COUNTRIES.length;
+
+// ═══════════════════════════════════════════════
+// STATE & STORAGE
+// ═══════════════════════════════════════════════
+const LS_KEY = 'flagdrill_v1';
+
+function loadData() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch { return {}; }
+}
+function saveData(d) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(d)); } catch {}
+}
+
+function getData() {
+  const d = loadData();
+  if (!d.history) d.history = {};
+  if (!d.drillCount) d.drillCount = 0;
+  if (!d.bestScore) d.bestScore = 0;
+  return d;
+}
+
+// ═══════════════════════════════════════════════
+// FUZZY MATCH
+// ═══════════════════════════════════════════════
+function normalise(s) {
+  return s.toLowerCase().trim()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9 ]/g, '');
+}
+
+let countryMap = null;
+function buildMap() {
+  if (countryMap) return;
+  countryMap = new Map();
+  for (const c of COUNTRIES) {
+    const key = c[1];
+    countryMap.set(normalise(c[1]), key);
+    for (const alias of c[2]) {
+      countryMap.set(normalise(alias), key);
+    }
+  }
+}
+
+// ── Flag rendering helper ──
+function flagImg(iso2, emoji, size=32) {
+  const url = `https://flagcdn.com/w${size}/${iso2}.png`;
+  const url2x = `https://flagcdn.com/w${size*2}/${iso2}.png`;
+  return `<img class="flag-svg" src="${url}" srcset="${url2x} 2x"
+    alt="${emoji}" loading="lazy"
+    onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">
+    <span class="flag-fallback" style="display:none">${emoji}</span>`;
+}
+
+function matchCountry(input) {
+  buildMap();
+  const q = normalise(input);
+  if (q.length < 2) return null;
+  if (countryMap.has(q)) return countryMap.get(q);
+  if (q.length >= 4) {
+    for (const [k, v] of countryMap) {
+      if (k.startsWith(q)) return v;
+    }
+  }
+  return null;
+}
+
+// ═══════════════════════════════════════════════
+// SCREEN MANAGEMENT
+// ═══════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+}
+
+function showStart() {
+  clearDrill();
+  updateStartStats();
+  showScreen('start');
+}
+
+function updateStartStats() {
+  const d = getData();
+  document.getElementById('stat-best').textContent = d.bestScore || '—';
+  const learned = Object.values(d.history).filter(h => (h.correct||0) >= 2 && (h.correct||0) >= (h.wrong||0) * 2).length;
+  document.getElementById('stat-learned').textContent = learned || '—';
+  document.getElementById('stat-drills').textContent = d.drillCount || '—';
+}
+
+// ═══════════════════════════════════════════════
+// DRILL MODE
+// ═══════════════════════════════════════════════
+let drillTimer = null;
+let drillSeconds = 0;
+let drillGuessed = new Set();
+let drillStartTime = null;
+
+// drillSorted: alphabetical — used for the DOM list
+let drillSorted = [];
+// drillOrder: shuffled — used for focus navigation
+let drillOrder = [];
+// Index into drillOrder of the currently focused flag
+let drillFocusIdx = 0;
+
+function buildFlagsList() {
+  drillSorted = [...COUNTRIES].sort((a, b) => a[1].localeCompare(b[1]));
+  drillOrder = [...drillSorted];
+  shuffleArr(drillOrder);
+
+  const list = document.getElementById('flags-list');
+  list.innerHTML = '';
+  for (let i = 0; i < drillSorted.length; i++) {
+    const c = drillSorted[i];
+    const row = document.createElement('div');
+    row.className = 'flag-row';
+    row.id = 'row-' + c[0];
+    row.dataset.idx = i;
+    row.dataset.name = c[1];
+    row.innerHTML = `
+      <img class="row-img" src="https://flagcdn.com/w40/${c[0]}.png"
+           srcset="https://flagcdn.com/w80/${c[0]}.png 2x"
+           alt="${c[3]}" loading="lazy"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">
+      <span class="row-fallback" style="display:none">${c[3]}</span>
+      <span class="row-name">???</span>
+      <span class="row-check" style="display:none">✓</span>
+    `;
+    row.addEventListener('click', () => {
+      if (!row.classList.contains('guessed')) {
+        // Find this country in drillOrder and jump to it
+        const orderIdx = drillOrder.findIndex(x => x[1] === c[1]);
+        if (orderIdx !== -1) drillFocusIdx = orderIdx;
+        renderFocusedFlag();
+        document.getElementById('drill-input').focus();
+      }
+    });
+    list.appendChild(row);
+  }
+}
+
+function renderFocusedFlag() {
+  // Find next unguessed starting from drillFocusIdx in drillOrder (wrap around)
+  const start = drillFocusIdx;
+  let found = false;
+  for (let offset = 0; offset < drillOrder.length; offset++) {
+    const idx = (start + offset) % drillOrder.length;
+    if (!drillGuessed.has(drillOrder[idx][1])) {
+      drillFocusIdx = idx;
+      found = true;
+      break;
+    }
+  }
+  if (!found) return;
+
+  const c = drillOrder[drillFocusIdx];
+
+  const focusEl = document.getElementById('drill-focus-flag');
+  focusEl.innerHTML = `
+    <img src="https://flagcdn.com/w160/${c[0]}.png"
+         srcset="https://flagcdn.com/w320/${c[0]}.png 2x"
+         alt="${c[3]}"
+         style="width:80px;height:auto;border-radius:4px;box-shadow:0 2px 10px rgba(0,0,0,0.15);"
+         onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">
+    <span style="display:none;font-size:3.5rem;line-height:1">${c[3]}</span>
+  `;
+
+  // Highlight active row — no scrollIntoView, focus box is sticky
+  document.querySelectorAll('.flag-row.focused').forEach(r => r.classList.remove('focused'));
+  const activeRow = document.getElementById('row-' + c[0]);
+  if (activeRow) activeRow.classList.add('focused');
+
+  const inp = document.getElementById('drill-input');
+  inp.value = '';
+  inp.className = 'drill-input';
+}
+
+function startDrill() {
+  clearDrill();
+  drillGuessed = new Set();
+  drillFocusIdx = 0;
+  drillSeconds = 15 * 60;
+  drillStartTime = Date.now();
+  buildFlagsList();
+  renderFocusedFlag();
+  updateDrillUI();
+  showScreen('drill');
+  document.getElementById('drill-input').focus();
+
+  drillTimer = setInterval(() => {
+    drillSeconds--;
+    updateDrillUI();
+    if (drillSeconds <= 0) endDrill(false);
+  }, 1000);
+}
+
+function clearDrill() {
+  if (drillTimer) { clearInterval(drillTimer); drillTimer = null; }
+}
+
+function updateDrillUI() {
+  const m = Math.floor(drillSeconds / 60);
+  const s = drillSeconds % 60;
+  const timerEl = document.getElementById('drill-timer');
+  timerEl.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  timerEl.classList.toggle('urgent', drillSeconds <= 60);
+
+  const n = drillGuessed.size;
+  document.getElementById('drill-count').textContent = `${n} / ${TOTAL}`;
+  document.getElementById('drill-pct').textContent = `${Math.round(n/TOTAL*100)}%`;
+  document.getElementById('drill-fill').style.width = `${n/TOTAL*100}%`;
+}
+
+function handleDrillInput() {
+  if (drillGuessed.size === TOTAL) return;
+  const inp = document.getElementById('drill-input');
+  const val = inp.value;
+  const focused = drillOrder[drillFocusIdx];
+  if (!focused) return;
+
+  const match = matchFocused(val, focused);
+  if (match) {
+    markGuessed(focused[1], focused[0]);
+    inp.classList.add('flash-green');
+    setTimeout(() => {
+      inp.classList.remove('flash-green');
+      drillFocusIdx++;
+      renderFocusedFlag();
+    }, 280);
+    recordHistory(focused[1], true);
+    updateDrillUI();
+    if (drillGuessed.size === TOTAL) {
+      setTimeout(() => endDrill(false), 350);
+    }
+  }
+}
+
+// Exact match against primary name and aliases only — no prefix
+function matchFocused(input, c) {
+  const q = normalise(input);
+  if (q.length < 2) return false;
+  const targets = [normalise(c[1]), ...c[2].map(normalise)];
+  return targets.includes(q);
+}
+
+function handleDrillKey(e) {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    drillSkip();
+  }
+}
+
+function drillSkip() {
+  drillFocusIdx++;
+  renderFocusedFlag();
+  document.getElementById('drill-input').focus();
+}
+
+function markGuessed(name, iso2) {
+  drillGuessed.add(name);
+  const row = document.getElementById('row-' + iso2);
+  if (row) {
+    row.classList.add('guessed');
+    row.classList.remove('focused');
+    row.querySelector('.row-name').textContent = row.dataset.name;
+    row.querySelector('.row-check').style.display = '';
+    row.style.animation = 'none';
+    void row.offsetWidth;
+    row.style.animation = 'pop 0.2s ease';
+  }
+}
+
+function recordHistory(name, correct) {
+  const d = getData();
+  if (!d.history[name]) d.history[name] = { correct: 0, wrong: 0 };
+  if (correct) d.history[name].correct++;
+  else d.history[name].wrong++;
+  saveData(d);
+}
+
+function endDrill(gaveUp) {
+  clearDrill();
+  const timeUsed = Math.floor((Date.now() - drillStartTime) / 1000);
+  const score = drillGuessed.size;
+
+  const missed = COUNTRIES.filter(c => !drillGuessed.has(c[1]));
+  for (const c of missed) recordHistory(c[1], false);
+
+  const d = getData();
+  d.drillCount = (d.drillCount || 0) + 1;
+  if (score > (d.bestScore || 0)) d.bestScore = score;
+  saveData(d);
+
+  document.getElementById('results-n').textContent = score;
+  document.getElementById('results-total').textContent = TOTAL;
+  document.getElementById('results-pct').textContent = Math.round(score/TOTAL*100) + '%';
+  const mins = Math.floor(timeUsed / 60);
+  const secs = timeUsed % 60;
+  document.getElementById('results-time').textContent = `${mins}:${String(secs).padStart(2,'0')}`;
+  document.getElementById('results-best-val').textContent = d.bestScore;
+
+  if (gaveUp) {
+    document.getElementById('results-sub').textContent = 'before time ran out';
+  } else if (score === TOTAL) {
+    document.getElementById('results-sub').textContent = '🎉 All flags!';
+  } else {
+    document.getElementById('results-sub').textContent = 'countries identified';
+  }
+
+  const missedGrid = document.getElementById('missed-grid');
+  const missedSection = document.getElementById('results-missed-section');
+  if (missed.length === 0) {
+    missedSection.style.display = 'none';
+  } else {
+    missedSection.style.display = '';
+    document.getElementById('results-missed-title').textContent = `${missed.length} flags you missed`;
+    missedGrid.innerHTML = '';
+    for (const c of missed) {
+      const item = document.createElement('div');
+      item.className = 'missed-item';
+      item.innerHTML = `${flagImg(c[0], c[3], 32)}<span>${c[1]}</span>`;
+      missedGrid.appendChild(item);
+    }
+  }
+
+  showScreen('results');
+}
+
+// ═══════════════════════════════════════════════
+// LEARN MODE
+// ═══════════════════════════════════════════════
+const LEARN_SESSION_SIZE = 15;
+let learnQueue = [];
+let learnIndex = 0;
+let learnResults = [];
+let learnAnswered = false;
+
+function buildLearnQueue() {
+  const d = getData();
+
+  const weighted = [];
+  for (const c of COUNTRIES) {
+    const h = d.history[c[1]] || { correct: 0, wrong: 0 };
+    const co = h.correct || 0;
+    const wr = h.wrong || 0;
+    let w = 1;
+    if (co + wr === 0) w = 2;
+    else if (wr > co) w = 4;
+    else if (wr === co) w = 2;
+    for (let i = 0; i < w; i++) weighted.push(c);
+  }
+
+  shuffleArr(weighted);
+  const seen = new Set();
+  const queue = [];
+  for (const c of weighted) {
+    if (!seen.has(c[1])) {
+      seen.add(c[1]);
+      queue.push(c);
+      if (queue.length >= LEARN_SESSION_SIZE) break;
+    }
+  }
+  return queue;
+}
+
+function shuffleArr(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function startLearn() {
+  learnQueue = buildLearnQueue();
+  learnIndex = 0;
+  learnResults = new Array(learnQueue.length).fill(null);
+  learnAnswered = false;
+  renderLearnCard();
+  showScreen('learn');
+  document.getElementById('learn-input').focus();
+}
+
+function renderLearnCard() {
+  const c = learnQueue[learnIndex];
+  const d = getData();
+  const h = d.history[c[1]] || { correct: 0, wrong: 0 };
+
+  document.getElementById('learn-curr').textContent = learnIndex + 1;
+  document.getElementById('learn-total').textContent = learnQueue.length;
+  document.getElementById('learn-flag').innerHTML = flagImg(c[0], c[3], 80);
+
+  const inp = document.getElementById('learn-input');
+  inp.value = '';
+  inp.className = 'learn-input';
+  inp.disabled = false;
+
+  document.getElementById('learn-answer').style.display = 'none';
+  document.getElementById('learn-hint').style.display = 'none';
+  document.getElementById('learn-next-btn').style.display = 'none';
+  document.getElementById('learn-skip-btn').style.display = '';
+
+  const chip = document.getElementById('learn-chip');
+  const wo = h.wrong || 0;
+  const co = h.correct || 0;
+  if (wo + co === 0) {
+    chip.textContent = 'New';
+    chip.className = 'learn-chip new';
+    chip.style.display = '';
+  } else if (wo > co) {
+    chip.textContent = `Missed ${wo}×`;
+    chip.className = 'learn-chip hard';
+    chip.style.display = '';
+  } else {
+    chip.style.display = 'none';
+  }
+
+  const card = document.getElementById('learn-card');
+  card.style.animation = 'none';
+  void card.offsetWidth;
+  card.style.animation = '';
+
+  const dots = document.getElementById('learn-dots');
+  dots.innerHTML = '';
+  for (let i = 0; i < learnQueue.length; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'learn-dot';
+    if (i < learnIndex) dot.classList.add(learnResults[i] ? 'done' : 'wrong-dot');
+    else if (i === learnIndex) dot.classList.add('current');
+    dots.appendChild(dot);
+  }
+
+  learnAnswered = false;
+  inp.focus();
+}
+
+function checkLearnAnswer() {
+  if (learnAnswered) { learnNext(); return; }
+  const c = learnQueue[learnIndex];
+  const inp = document.getElementById('learn-input');
+  const val = inp.value.trim();
+  const match = matchCountry(val);
+  const correct = match === c[1];
+
+  learnAnswered = true;
+  inp.disabled = true;
+  inp.className = 'learn-input ' + (correct ? 'correct' : 'wrong');
+
+  const ansEl = document.getElementById('learn-answer');
+  const hintEl = document.getElementById('learn-hint');
+
+  if (correct) {
+    ansEl.textContent = '✓ ' + c[1];
+    ansEl.style.display = '';
+    ansEl.style.color = 'var(--green)';
+  } else {
+    ansEl.textContent = c[1];
+    ansEl.style.display = '';
+    ansEl.style.color = 'var(--ink)';
+    hintEl.textContent = val ? `You wrote: "${val}"` : '(skipped)';
+    hintEl.style.display = '';
+  }
+
+  learnResults[learnIndex] = correct;
+  recordHistory(c[1], correct);
+
+  document.getElementById('learn-skip-btn').style.display = 'none';
+  document.getElementById('learn-next-btn').style.display = '';
+
+  const dots = document.getElementById('learn-dots').children;
+  if (dots[learnIndex]) {
+    dots[learnIndex].classList.remove('current');
+    dots[learnIndex].classList.add(correct ? 'done' : 'wrong-dot');
+  }
+}
+
+function learnSkip() {
+  document.getElementById('learn-input').value = '';
+  checkLearnAnswer();
+}
+
+function learnNext() {
+  learnIndex++;
+  if (learnIndex >= learnQueue.length) {
+    endLearn();
+  } else {
+    renderLearnCard();
+  }
+}
+
+function endLearn() {
+  const correct = learnResults.filter(Boolean).length;
+  const total = learnQueue.length;
+  document.getElementById('footer-info').textContent = `Last learn: ${correct}/${total} correct`;
+  showStart();
+}
+
+// ── Start screen preview flags ──
+function renderStartPreview() {
+  const el = document.getElementById('start-preview');
+  if (!el) return;
+  const sample = ['fr','jp','br','de','ng','au','in','mx','za','us','cn','gb','eg','ar','id'];
+  el.innerHTML = sample.map((iso, i) =>
+    `<img src="https://flagcdn.com/w40/${iso}.png"
+      srcset="https://flagcdn.com/w80/${iso}.png 2x"
+      alt="" style="animation-delay:${i*0.04}s"
+      onerror="this.style.display='none'">`
+  ).join('');
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+buildMap();
+updateStartStats();
+renderStartPreview();
+</script>
+</body>
+</html>
